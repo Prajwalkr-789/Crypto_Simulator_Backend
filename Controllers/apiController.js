@@ -3,7 +3,6 @@ const jwt = require("jsonwebtoken");
 const User = require("../Models/User");
 const Transaction = require("../Models/Transaction");
 
-
 // authenticateTokenGetID function to get user ID from token
 // buycoin function to handle coin purchase
 // sellcoin function to handle coin sale
@@ -11,6 +10,9 @@ const Transaction = require("../Models/Transaction");
 // getHoldings function to fetch user's coin holdings
 // Dashboard function to fetch user's wallet balance and transactions
 // getWalletBalance function to fetch user's wallet balance
+
+let clients = [];
+let cachedData = null;
 
 const JWT_SECRET = "Prajwal<3sahana";
 
@@ -35,6 +37,8 @@ function authenticateTokenGetID(req, res) {
 }
 }
 
+
+
 async function buycoin(req, res) {
   try {
     const { coinName, quantity, pricePerCoin } = req.body;
@@ -55,9 +59,11 @@ async function buycoin(req, res) {
     }
     console.log("user found and funds are sufficient");
     user.walletBalance -= quantity * pricePerCoin;
-
     if (user.holdings[coinName]) {
+      console.log(user.holdings[coinName]);
       user.holdings[coinName].quantity += quantity;
+      console.log(user.holdings[coinName]);
+
       user.holdings[coinName].purchasePrice = pricePerCoin;
       user.holdings[coinName].purchaseDate = new Date();
     } else {
@@ -110,25 +116,7 @@ async function sellcoin(req, res) {
     return res.status(404).json({ message: "User not found" });
   }
 
-  // const holdingIndex = user.holdings.findIndex(h => h.coinName === coinName);
-  //   if (holdingIndex === -1 || user.holdings[holdingIndex].quantity < quantity) {
-  //     return res.status(400).json({ message: "Insufficient holdings" });
-  //   }
-
-  //   // Update wallet balance
-  //   const value = pricePerCoin * quantity;
-  //   user.walletBalance += value;
-
-  //   // Update or remove holding
-  //   user.holdings[holdingIndex].quantity -= quantity;
-  //   if (user.holdings[holdingIndex].quantity === 0) {
-  //     user.holdings.splice(holdingIndex, 1);
-  //   }
-
-  //   await user.save();
-
   const holding = user.holdings.find(h => h.coinName === coinName);
-
     if (!holding || holding.quantity < quantity) {
       return res.status(400).json({ message: "Insufficient holdings" });
     }
@@ -246,6 +234,66 @@ async function getWalletBalance(req, res) {
 }
 
 
+// Function to fetch data from CoinGecko and broadcast to all clients
+const fetchAndBroadcastPrices = async () => {
+  // console.log("Fetching prices from CoinGecko called here");
+  try {
+    const response = await fetch(
+      'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=24&page=1'
+    );
+    const data = await response.json();
+    cachedData = data;
+
+    // Send data to all connected clients
+    clients.forEach(client => {
+      client.res.write(`data: ${JSON.stringify(data)}\n\n`);
+    });
+  } catch (error) {
+    const errorMsg = { error: 'Failed to fetch prices' };
+    clients.forEach(client => {
+      client.res.write(`data: ${JSON.stringify(errorMsg)}\n\n`);
+    });
+  }
+};
+
+// Set up interval to fetch every 20 seconds
+if (!globalThis.priceFetchIntervalSet) {
+  globalThis.priceFetchIntervalSet = true;
+  setInterval(fetchAndBroadcastPrices, 20000); 
+}
+
+// SSE handler
+async function serversentevent(req, res) {
+  // Set headers for SSE
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+
+  console.log("SSE connection established");
+
+  // Push the latest cached data immediately
+  if (cachedData) {
+    res.write(`data: ${JSON.stringify(cachedData)}\n\n`);
+  }
+
+  const clientId = Date.now();
+  const newClient = {
+    id: clientId,
+    res
+  };
+  clients.push(newClient);
+
+  // Clean up when client disconnects
+  req.on('close', () => {
+    console.log(`Client ${clientId} disconnected`);
+    clients = clients.filter(client => client.id !== clientId);
+    res.end();
+  });
+}
+
+
+
 
 module.exports = {
   getWalletBalance,
@@ -253,5 +301,6 @@ module.exports = {
   sellcoin,
   getTransactionHistory,
   Dashboard,
-  getHoldings
+  getHoldings,
+  serversentevent,
 };

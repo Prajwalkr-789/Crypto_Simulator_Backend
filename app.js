@@ -19,8 +19,10 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    origin: "*",
+    origin: ["http://localhost:3000"],
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
@@ -31,7 +33,8 @@ app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
 });
 
- module.exports = app;
+module.exports = app;
 
 
-//  
+
+

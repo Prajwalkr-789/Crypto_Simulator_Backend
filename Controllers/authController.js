@@ -73,7 +73,7 @@ const signin = async (req, res) => {
     if (!user.password) {
       return res
         .status(401)
-        .json({ error: "Something went wrong!" });
+        .json({ error: "Password not found" });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
@@ -117,6 +117,9 @@ function authenticateToken(req, res) {
 }
 
 const logout = async (req, res) => {
+  if(!req.cookies?.jwt) {
+    return res.status(401).json({ message: "No token provided" });
+  }
     res.clearCookie("jwt");
     res.status(200).json({ message: "Logged out successfully" });
   };
