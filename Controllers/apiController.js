@@ -59,20 +59,20 @@ async function buycoin(req, res) {
     }
     console.log("user found and funds are sufficient");
     user.walletBalance -= quantity * pricePerCoin;
-    if (user.holdings[coinName]) {
-      console.log(user.holdings[coinName]);
-      user.holdings[coinName].quantity += quantity;
-      console.log(user.holdings[coinName]);
+    const existingHolding = user.holdings.find(h => h.coinName === coinName);
 
-      user.holdings[coinName].purchasePrice = pricePerCoin;
-      user.holdings[coinName].purchaseDate = new Date();
-    } else {
-      user.holdings[coinName] = {
-        quantity,
-        purchasePrice: pricePerCoin,
-        purchaseDate: new Date(),
-      };
-    }
+if (existingHolding) {
+  existingHolding.quantity += quantity;
+  existingHolding.purchasePrice = pricePerCoin;
+  existingHolding.purchaseDate = new Date();
+} else {
+  user.holdings.push({
+    coinName,
+    quantity,
+    purchasePrice: pricePerCoin,
+    purchaseDate: new Date(),
+  });
+}
     
     await user.save();
     
@@ -201,19 +201,30 @@ async function getHoldings(req, res) {
 }
 
 async function Dashboard(req, res) {
+  try{
   const UserId = await authenticateTokenGetID(req, res);
+  console.log("UserId in dashboard", UserId);
   if (!UserId) {
     return res.status(401).json({ message: "Unauthorized" });
   }
-  const user = await User.findById(UserId.userId);
+  const user = await User.findById(UserId);
+  console.log("user in dashboard", user);
   if (!user) {
     return res.status(404).json({ message: "User not found" });
   }
-  const walletBalance = user.walletBalance;
+  console.log("user found in dashboard");
+  const walletBalance = await user.walletBalance;
   const holdings = await user.holdings;
-  const transactions = await Transaction.find({ user: user._id });
+  const transactions = await Transaction.find({ user: user._id }).limit(6).sort({
+    purchaseDate: -1,
+  });
+  const username = user.username;
 
-  return res.status(200).json({ walletBalance, transactions });
+  return res.status(200).json({username, walletBalance,holdings, transactions });
+}
+  catch (error) {
+    res.status(500).json({ error: "Internal server error" });
+  }
 }
 
 async function getWalletBalance(req, res) {

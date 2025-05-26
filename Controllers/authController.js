@@ -44,7 +44,7 @@ const signup = async (req, res) => {
        maxAge: 3600000, // 1 hour
     });
 
-    res.status(201).json({ message: "User created successfully" });
+    res.status(201).json({ message: "User created successfully" , username : newUser.username });
   } catch (error) {
     console.error("Signup Error:", error);
     res.status(500).json({ error: "Internal server error" });
@@ -91,7 +91,7 @@ const signin = async (req, res) => {
       maxAge: 3600000, // 1 hour
     });
 
-    res.json({ message: "Login successful" });
+    res.json({ message: "Login successful"  , username : user.username  });
   } catch (error) {
     console.error("Signin Error:", error);
     res.status(500).json({ error: "Internal server error" });
