@@ -25,7 +25,7 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
-
+app.get('/' , (req,res) =>  res.json({message:" Jai shree Ram"}));;
 app.use("/api", apiRoutes);
 app.use("/auth", authRoutes);
 
