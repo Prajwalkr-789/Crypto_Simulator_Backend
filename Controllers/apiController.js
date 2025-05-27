@@ -248,6 +248,7 @@ async function getWalletBalance(req, res) {
 // Function to fetch data from CoinGecko and broadcast to all clients
 const fetchAndBroadcastPrices = async () => {
   // console.log("Fetching prices from CoinGecko called here");
+  console.log("Fetching prices from CoinGecko...");
   try {
     const response = await fetch(
       'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=24&page=1'
@@ -276,6 +277,8 @@ if (!globalThis.priceFetchIntervalSet) {
 // SSE handler
 async function serversentevent(req, res) {
   // Set headers for SSE
+  console.log("SSE request received");
+  // res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
