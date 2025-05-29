@@ -2,6 +2,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../Models/User");
 const Transaction = require("../Models/Transaction");
+const { path } = require("../app");
 
 // signup function to register a new user
 // signin function to authenticate a user
@@ -34,14 +35,14 @@ const signup = async (req, res) => {
     const newUser = new User({ username, email, password: hashedPassword });
 
     await newUser.save();
-    const token = jwt.sign({ userId: newUser._id }, JWT_SECRET, {
+    const token = await jwt.sign({ userId: newUser._id }, JWT_SECRET, {
       expiresIn: "1h",
     });
 
     res.cookie("jwt", token, {
        httpOnly: true,
-       secure: true,
-       maxAge: 3600000, // 1 hour
+       secure: process.env.NODE_ENV === "production",
+       maxAge: 3600000,
     });
 
     res.status(201).json({ message: "User created successfully" , username : newUser.username });
@@ -81,15 +82,16 @@ const signin = async (req, res) => {
       return res.status(401).json({ error: " Password is wrong " });
     }
 
-    const token = jwt.sign({ userId: user._id }, JWT_SECRET, {
+    const token = await jwt.sign({ userId: user._id }, JWT_SECRET, {
       expiresIn: "1h",
     });
 
     res.cookie("jwt", token, {
       httpOnly: true,
-      secure: true,
-      samesite : 'none',
-      maxAge: 3600000, // 1 hour
+      secure: process.env.NODE_ENV === "production", 
+      maxAge: 1 * 60 * 60 * 1000, 
+      samesite: 'none',
+      // path: '/'
     });
 
     res.json({ message: "Login successful"  , username : user.username  });
@@ -109,9 +111,10 @@ function authenticateToken(req, res) {
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     req.user = decoded;
+    const username = req.user.username;
     return res
       .status(200)
-      .json({ message: "Token is valid", userId: decoded.userId });
+      .json({ message: "Token is valid", username: username }); 
   } catch (err) {
     return res.status(403).json({ message: "Invalid or expired token." });
   }

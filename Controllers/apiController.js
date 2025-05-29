@@ -203,12 +203,11 @@ async function getHoldings(req, res) {
 async function Dashboard(req, res) {
   try{
   const UserId = await authenticateTokenGetID(req, res);
-  console.log("UserId in dashboard", UserId);
   if (!UserId) {
     return res.status(401).json({ message: "Unauthorized" });
   }
   const user = await User.findById(UserId);
-  console.log("user in dashboard", user);
+
   if (!user) {
     return res.status(404).json({ message: "User not found" });
   }
