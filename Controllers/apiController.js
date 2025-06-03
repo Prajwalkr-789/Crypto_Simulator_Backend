@@ -37,8 +37,6 @@ function authenticateTokenGetID(req, res) {
 }
 }
 
-
-
 async function buycoin(req, res) {
   try {
     const { coinName, quantity, pricePerCoin } = req.body;
@@ -304,8 +302,6 @@ async function serversentevent(req, res) {
     res.end();
   });
 }
-
-
 
 
 module.exports = {

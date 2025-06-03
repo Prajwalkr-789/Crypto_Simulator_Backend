@@ -17,14 +17,11 @@ const app = express();
 // app.use(helmet({contentSecurityPolicy : false}));
 app.use(express.json());
 app.use(cookieParser());
-app.use(
-  cors({
-    origin: ["http://localhost:3000","https://crypto-simulator-frontend.vercel.app"],
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
+app.use(cors({
+  origin: "http://localhost:3000",
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+}));
 
 app.get('/' , (req,res) =>  res.json({message:" Jai shree Ram"}));
 app.use("/api", apiRoutes);
