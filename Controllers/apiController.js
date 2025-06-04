@@ -279,7 +279,7 @@ async function serversentevent(req, res) {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
-  res.flushHeaders();
+  // res.flushHeaders();
 
   console.log("SSE connection established");
 
@@ -294,6 +294,7 @@ async function serversentevent(req, res) {
     res
   };
   clients.push(newClient);
+  console.log(`Client ${clientId} connected. Total clients: ${clients.length}`);
 
   // Clean up when client disconnects
   req.on('close', () => {
