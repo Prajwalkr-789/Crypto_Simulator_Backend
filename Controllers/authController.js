@@ -103,21 +103,25 @@ const signin = async (req, res) => {
 };
 
 function authenticateToken(req, res) {
-  const token = req.cookies?.jwt;
-  if (!token) {
-    return res
-      .status(401)
-      .json({ message: "Access Denied. No token provided." });
-  }
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = decoded;
-    const username = req.user.username;
-    return res
-      .status(200)
-      .json({ message: "Token is valid", username: username }); 
-  } catch (err) {
-    return res.status(403).json({ message: "Invalid or expired token." });
+    try {
+    const token = req.cookies?.jwt;
+    if (!token) {
+      return res
+        .status(401)
+        .json({ message: "Access Denied. No token provided." });
+    }
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET);
+      if (!decoded || !decoded.userId) {
+        return res.status(401).json({ message: "Invalid token." });
+      }
+     return res.status(200).json({ message: "Token is valid" , username: decoded.username });
+    } catch (err) {
+      return res.status(403).json({ message: "Invalid or expired token." });
+    }
+  } catch (error) {
+    console.error("Error in authenticateTokenGetID:", error);
+    return res.status(500).json({ message: "Token not found" });
   }
 }
 
