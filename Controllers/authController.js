@@ -42,6 +42,7 @@ const signup = async (req, res) => {
     res.cookie("jwt", token, {
        httpOnly: true,
        secure: process.env.NODE_ENV === "production",
+       samwesite: 'none',
        maxAge: 3600000,
     });
 
@@ -94,7 +95,7 @@ const signin = async (req, res) => {
       // path: '/'
     });
 
-    res.json({ message: "Login successful"  , username : user.username  });
+    res.status(200).json({ message: "Login successful"  , username : user.username  });
   } catch (error) {
     console.error("Signin Error:", error);
     res.status(500).json({ error: "Internal server error" });
