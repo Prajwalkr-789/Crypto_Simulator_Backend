@@ -21,9 +21,7 @@ function authenticateTokenGetID(req, res) {
   try {
   const token = req.cookies?.jwt;
   if (!token) {
-    return res
-      .status(401)
-      .json({ message: "Access Denied. No token provided." });
+   return null
   }
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
@@ -228,7 +226,7 @@ async function Dashboard(req, res) {
 async function getWalletBalance(req, res) {
   try {
     const UserId = await authenticateTokenGetID(req, res);
-    if (!UserId) {
+    if (!UserId || UserId === null) {
       return res.status(401).json({ message: "Unauthorized" });
     }
     const user = await User.findById(UserId);
