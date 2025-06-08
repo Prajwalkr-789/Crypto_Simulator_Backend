@@ -7,7 +7,9 @@ const cookieParser = require('cookie-parser');
 const {connectDB} = require('./Database/database');
 const authRoutes = require('./routes/authRoutes');
 const apiRoutes = require('./routes/apiRoutes');
+const redisDB = require('./Database/RedisDB');
 // const helmet = require('helmet');
+// require('./redisCOntroller.js'); // To handle async errors globally
 
 dotenv.config();
 connectDB();
@@ -23,6 +25,12 @@ app.use(cors({
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
 }));
+
+
+redisDB.connectRedis()
+  .then(() => console.log("✅ Redis connected successfully"))
+  .catch((err) => console.error("❌ Redis connection failed:", err));
+
 
 app.get('/' , (req,res) =>  res.json({message:" Jai shree Ram"}));
 app.use("/api", apiRoutes);

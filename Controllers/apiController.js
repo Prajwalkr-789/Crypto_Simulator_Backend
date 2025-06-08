@@ -2,6 +2,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../Models/User");
 const Transaction = require("../Models/Transaction");
+const { connectRedis } = require("../Database/RedisDB");
 
 // authenticateTokenGetID function to get user ID from token
 // buycoin function to handle coin purchase
@@ -243,66 +244,83 @@ async function getWalletBalance(req, res) {
 
 
 // Function to fetch data from CoinGecko and broadcast to all clients
-const fetchAndBroadcastPrices = async () => {
-  // console.log("Fetching prices from CoinGecko called here");
-  console.log("Fetching prices from CoinGecko...");
-  try {
-    const response = await fetch(
-      'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=24&page=1'
-    );
-    const data = await response.json();
-    cachedData = data;
+  // const fetchAndBroadcastPrices = async () => {
+  //   // console.log("Fetching prices from CoinGecko called here");
+  //   console.log("Fetching prices from CoinGecko...");
+  //   try {
+  //     const response = await fetch(
+  //       'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=24&page=1'
+  //     );
+  //     const data = await response.json();
+  //     cachedData = data;
 
-    // Send data to all connected clients
-    clients.forEach(client => {
-      client.res.write(`data: ${JSON.stringify(data)}\n\n`);
-    });
-  } catch (error) {
-    const errorMsg = { error: 'Failed to fetch prices' };
-    clients.forEach(client => {
-      client.res.write(`data: ${JSON.stringify(errorMsg)}\n\n`);
-    });
+  //     // Send data to all connected clients
+  //     clients.forEach(client => {
+  //       client.res.write(`data: ${JSON.stringify(data)}\n\n`);
+  //     });
+  //   } catch (error) {
+  //     const errorMsg = { error: 'Failed to fetch prices' };
+  //     clients.forEach(client => {
+  //       client.res.write(`data: ${JSON.stringify(errorMsg)}\n\n`);
+  //     });
+  //   }
+  // };
+
+  // Set up interval to fetch every 20 seconds
+  // if (!globalThis.priceFetchIntervalSet) {
+  //   globalThis.priceFetchIntervalSet = true;
+  //   setInterval(fetchAndBroadcastPrices, 20000); 
+  // }
+
+  // SSE handler
+  async function serversentevent(req, res) {
+    // Set headers for SSE
+    console.log("SSE request received");
+    // res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    // res.flushHeaders();
+
+    console.log("SSE connection established");
+
+    // Push the latest cached data immediately
+     const redis = await connectRedis();
+
+  // Send latest cached data from Redis
+  const cached = await redis.get('crypto_prices');
+  if (cached) {
+    res.write(`data: ${cached}\n\n`);
   }
-};
 
-// Set up interval to fetch every 20 seconds
-if (!globalThis.priceFetchIntervalSet) {
-  globalThis.priceFetchIntervalSet = true;
-  setInterval(fetchAndBroadcastPrices, 20000); 
-}
+    const clientId = Date.now();
+    const newClient = {
+      id: clientId,
+      res
+    };
+    clients.push(newClient);
+    console.log(`Client ${clientId} connected. Total clients: ${clients.length}`);
 
-// SSE handler
-async function serversentevent(req, res) {
-  // Set headers for SSE
-  console.log("SSE request received");
-  // res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  // res.flushHeaders();
-
-  console.log("SSE connection established");
-
-  // Push the latest cached data immediately
-  if (cachedData) {
-    res.write(`data: ${JSON.stringify(cachedData)}\n\n`);
-  }
-
-  const clientId = Date.now();
-  const newClient = {
-    id: clientId,
-    res
-  };
-  clients.push(newClient);
-  console.log(`Client ${clientId} connected. Total clients: ${clients.length}`);
-
-  // Clean up when client disconnects
-  req.on('close', () => {
-    console.log(`Client ${clientId} disconnected`);
-    clients = clients.filter(client => client.id !== clientId);
-    res.end();
+    const sub = redis.duplicate();
+  await sub.connect();
+  await sub.subscribe('price_update', async () => {
+    const newData = await redis.get('crypto_prices');
+    if (newData) {
+      clients.forEach(c => {
+        c.res.write(`data: ${newData}\n\n`);
+      });
+    }
   });
-}
+
+    // Clean up when client disconnects
+    req.on('close', async () => {
+      console.log(`Client ${clientId} disconnected`);
+      clients = clients.filter(c => c.id !== clientId);
+      await sub.unsubscribe('price_update');
+      await sub.quit();
+      res.end();
+    });
+  }
 
 
 module.exports = {
