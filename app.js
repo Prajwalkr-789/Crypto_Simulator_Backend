@@ -9,7 +9,6 @@ const authRoutes = require('./routes/authRoutes');
 const apiRoutes = require('./routes/apiRoutes');
 const redisDB = require('./Database/RedisDB');
 // const helmet = require('helmet');
-// require('./redisCOntroller.js'); // To handle async errors globally
 
 dotenv.config();
 connectDB();
@@ -20,12 +19,11 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
-  // origin: "http://localhost:3000,",
+  // origin: "http://localhost:3000",
   origin:"https://crypto-simulator-frontend.vercel.app",
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
 }));
-
 
 redisDB.connectRedis()
   .then(() => console.log("✅ Redis connected successfully"))

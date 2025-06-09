@@ -42,7 +42,7 @@ const signup = async (req, res) => {
     res.cookie("jwt", token, {
        httpOnly: true,
        secure: process.env.NODE_ENV === "production",
-       samwesite: 'none',
+       sameSite: 'none',
        maxAge: 3600000,
     });
 
@@ -91,8 +91,8 @@ const signin = async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production", 
       maxAge: 1 * 60 * 60 * 1000, 
-      samesite: 'none',
-      // path: '/'
+      sameSite: 'none',
+      path: '/'
     });
 
     res.status(200).json({ message: "Login successful"  , username : user.username  });
