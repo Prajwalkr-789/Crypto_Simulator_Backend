@@ -25,10 +25,26 @@ async function fetchAndPublishPrices() {
   }
 }
 
-// Call every 20 seconds
-async function startWorker() {
-  await fetchAndPublishPrices(); // initial call
-  setInterval(fetchAndPublishPrices, 20000); // every 20 seconds
+// // Call every 20 seconds
+// async function startWorker() {
+//   await fetchAndPublishPrices(); // initial call
+//   setInterval(fetchAndPublishPrices, 20000); // every 20 seconds
+// }
+
+function startWorker() {
+    console.log('🔄 Starting worker...');
+    fetchAndPublishPrices();
+    intervalId = setInterval(fetchAndPublishPrices, 20000);
 }
 
-startWorker();
+function stopWorker() {
+    clearInterval(intervalId);
+    intervalId = null;
+    console.log('🛑 Worker stopped.');
+}
+
+// startWorker();
+module.exports = {
+  startWorker,
+  stopWorker,
+};

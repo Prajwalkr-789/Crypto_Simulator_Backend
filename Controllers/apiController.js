@@ -2,7 +2,8 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../Models/User");
 const Transaction = require("../Models/Transaction");
-const { connectRedis } = require("../Database/RedisDB");
+const { connectRedis ,  } = require("../Database/RedisDB");
+const {startWorker,stopWorker} = require('../redisCOntroller')
 
 // authenticateTokenGetID function to get user ID from token
 // buycoin function to handle coin purchase
@@ -41,7 +42,7 @@ async function buycoin(req, res) {
     const { coinName, quantity, pricePerCoin } = req.body;
     console.log("before authenticating");
     const UserId = await authenticateTokenGetID(req, res);
-    if (!UserId) {
+    if (!UserId || UserId === null) {
       return res.status(401).json({ message: "Unauthorized" });
     }
     console.log("after taking the id");
@@ -105,7 +106,7 @@ async function sellcoin(req, res) {
   try {
   const { coinName, quantity, pricePerCoin } = req.body;
   const UserId = await authenticateTokenGetID(req, res);
-  if (!UserId) {
+  if (!UserId || UserId === null) {
     return res.status(401).json({ message: "Unauthorized" });
   }
   const user = await User.findById(UserId);
@@ -162,7 +163,7 @@ async function sellcoin(req, res) {
 async function getTransactionHistory(req, res) {
   try {
   const UserId = await authenticateTokenGetID(req, res);
-  if (!UserId) {
+  if (!UserId || UserId === null) {
     return res.status(401).json({ message: "Unauthorized" });
   }
   const user = await User.findById(UserId);
@@ -182,7 +183,7 @@ async function getTransactionHistory(req, res) {
 async function getHoldings(req, res) {
   try {
     const UserId = await authenticateTokenGetID(req, res);
-    if (!UserId) {
+    if (!UserId || UserId === null) {
       return res.status(401).json({ message: "Unauthorized" });
     }
     const user = await User.findById(UserId);
@@ -200,7 +201,7 @@ async function getHoldings(req, res) {
 async function Dashboard(req, res) {
   try{
   const UserId = await authenticateTokenGetID(req, res);
-  if (!UserId) {
+  if (!UserId || UserId === null) {
     return res.status(401).json({ message: "Unauthorized" });
   }
   const user = await User.findById(UserId);
@@ -296,12 +297,15 @@ async function getWalletBalance(req, res) {
       id: clientId,
       res
     };
+    
     clients.push(newClient);
     console.log(`Client ${clientId} connected. Total clients: ${clients.length}`);
-
+  if(clients.length == 1){
+        startWorker();
+      }
     const sub = redis.duplicate();
-  await sub.connect();
-  await sub.subscribe('price_update', async () => {
+    await sub.connect();
+    await sub.subscribe('price_update', async () => {
     const newData = await redis.get('crypto_prices');
     if (newData) {
       clients.forEach(c => {
@@ -314,6 +318,9 @@ async function getWalletBalance(req, res) {
     req.on('close', async () => {
       console.log(`Client ${clientId} disconnected`);
       clients = clients.filter(c => c.id !== clientId);
+      if(clients.length == 0) {
+        stopWorker();
+      }
       await sub.unsubscribe('price_update');
       await sub.quit();
       res.end();
