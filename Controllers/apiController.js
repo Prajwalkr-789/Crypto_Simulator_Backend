@@ -316,7 +316,10 @@ async function getWalletBalance(req, res) {
 
    const disconnectTimer = setTimeout(async () => {
     console.log(`Client ${clientId} auto-disconnected after 2.5 min`);
-    res.end(); // End SSE stream
+    if(clients.length == 0){
+        stopWorker();
+      }
+    res.end();
   }, 150000);
 
     // Clean up when client disconnects
