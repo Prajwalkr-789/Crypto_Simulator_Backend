@@ -4,7 +4,7 @@ const User = require("../Models/User");
 const Transaction = require("../Models/Transaction");
 const { connectRedis ,  } = require("../Database/RedisDB");
 const {startWorker,stopWorker} = require('../redisCOntroller')
-
+require("dotenv").config();
 // authenticateTokenGetID function to get user ID from token
 // buycoin function to handle coin purchase
 // sellcoin function to handle coin sale
@@ -16,35 +16,13 @@ const {startWorker,stopWorker} = require('../redisCOntroller')
 let clients = [];
 let cachedData = null;
 
-const JWT_SECRET = "Prajwal<3sahana";
-
-function authenticateTokenGetID(req, res) {
-  try {
-  const token = req.cookies?.jwt;
-  if (!token) {
-    console.log("Token not found in cookies");
-   return null
-  }
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = decoded;
-    console.log("Token decoded successfully:", decoded);
-    return decoded.userId;
-
-  } catch (err) {
-    return res.status(403).json({ message: "Invalid or expired token." });
-  }
-} catch (error) {
-  console.error("Error in authenticateTokenGetID:", error);
-  return res.status(500).json({ message: "Token not found" });
-}
-}
+const JWT_SECRET = process.env.JWT_SECRET;
 
 async function buycoin(req, res) {
   try {
     const { coinName, quantity, pricePerCoin } = req.body;
     console.log("before authenticating");
-    const UserId = await authenticateTokenGetID(req, res);
+    const UserId = req.user;
     if (!UserId || UserId === null) {
       return res.status(401).json({ message: "Unauthorized" });
     }
@@ -108,7 +86,7 @@ if (existingHolding) {
 async function sellcoin(req, res) {
   try {
   const { coinName, quantity, pricePerCoin } = req.body;
-  const UserId = await authenticateTokenGetID(req, res);
+  const UserId = req.user;
   if (!UserId || UserId === null) {
     return res.status(401).json({ message: "Unauthorized" });
   }
@@ -165,7 +143,7 @@ async function sellcoin(req, res) {
 
 async function getTransactionHistory(req, res) {
   try {
-  const UserId = await authenticateTokenGetID(req, res);
+  const UserId = req.user;
   if (!UserId || UserId === null) {
     return res.status(401).json({ message: "Unauthorized" });
   }
@@ -185,7 +163,7 @@ async function getTransactionHistory(req, res) {
 
 async function getHoldings(req, res) {
   try {
-    const UserId = await authenticateTokenGetID(req, res);
+    const UserId = req.user;
     if (!UserId || UserId === null) {
       return res.status(401).json({ message: "Unauthorized" });
     }
@@ -203,7 +181,7 @@ async function getHoldings(req, res) {
 
 async function Dashboard(req, res) {
   try{
-  const UserId = await authenticateTokenGetID(req, res);
+  const UserId = req.user;
   if (!UserId || UserId === null) {
     console.log("UserId" + UserId);
     return res.status(401).json({ message: "Unauthorized" });
@@ -230,7 +208,7 @@ async function Dashboard(req, res) {
 
 async function getWalletBalance(req, res) {
   try {
-    const UserId = await authenticateTokenGetID(req, res);
+    const UserId = req.user;
     if (!UserId || UserId === null) {
       return res.status(401).json({ message: "Unauthorized" });
     }
