@@ -22,12 +22,15 @@ function authenticateTokenGetID(req, res) {
   try {
   const token = req.cookies?.jwt;
   if (!token) {
+    console.log("Token not found in cookies");
    return null
   }
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     req.user = decoded;
+    console.log("Token decoded successfully:", decoded);
     return decoded.userId;
+
   } catch (err) {
     return res.status(403).json({ message: "Invalid or expired token." });
   }
@@ -202,6 +205,7 @@ async function Dashboard(req, res) {
   try{
   const UserId = await authenticateTokenGetID(req, res);
   if (!UserId || UserId === null) {
+    console.log("UserId" + UserId);
     return res.status(401).json({ message: "Unauthorized" });
   }
   const user = await User.findById(UserId);
