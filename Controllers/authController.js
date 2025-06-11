@@ -127,7 +127,6 @@ async function authenticateToken(req, res) {
 
     return res.status(200).json({ message: "Token is valid", username: user.username });
   } catch (err) {
-    console.error("Token verification failed:", err);
     return res.status(403).json({ message: "Invalid or expired token." });
   }
 }
