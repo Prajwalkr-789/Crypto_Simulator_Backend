@@ -1,6 +1,6 @@
 ### 🖥️ Backend
 
-## 📁 Project Structure
+#### 📁 Project Structure
 
 ```txt
 /Controllers → API logic (auth, trades, prices)
@@ -11,9 +11,7 @@
 app.js → Main entry file
 ```
 
-## 🧪 Setup Instructions
-
-🔗 [Github Link (Backend)](https://github.com/Prajwalkr-789/Crypto_Simulator_Backend)  
+#### 🧪 Setup Instructions
 
 ```bash
 git clone https://github.com/Prajwalkr-789/Crypto_Simulator_Backend
@@ -21,7 +19,10 @@ cd crypto-simulator-backend
 npm install
 npm run dev
 ```
+
+```txt
 PORT=8080
 MONGO_URI=your-mongodb-uri
 JWT_SECRET=your-secret
 COINGECKO_API_URL=https://api.coingecko.com/api/v3/simple/price
+```
