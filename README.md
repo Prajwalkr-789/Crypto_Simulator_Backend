@@ -2,12 +2,14 @@
 
 ## 📁 Project Structure
 
+```txt
 /Controllers → API logic (auth, trades, prices)
 /Database → MongoDB connection config
 /Models → Mongoose schemas (User, Trade, Transaction)
 /Middleware → Auth guard, error handlers
 /routes → All route files (auth, trade, price, transactions)
 app.js → Main entry file
+```
 
 ## 🧪 Setup Instructions
 
